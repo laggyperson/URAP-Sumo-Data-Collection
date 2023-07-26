@@ -16,6 +16,7 @@ import traci.constants as tc
 import time
 import numpy as np
 import xarray as xr
+import argparse
 
 # Turning off legacy mode
 traci.setLegacyGetLeader(False)
@@ -159,7 +160,42 @@ def numberVehtoTL(vehID, tl_dist):
 # =========================== End Helper Functions ===========================
 
 # Arg parser
-arg_parser = argparse.ArgumentParser(description="Specify simulation specs to run and collect data on the simulation")
+argparser = argparse.ArgumentParser(description="Specify simulation specs to run and collect data on the simulation")
+
+argparser.add_argument("sumo_cfg_file", 
+                       type=str,
+                       required=True,
+                       metavar="C",
+                       dest="sumo_cfg_file",
+                       help = "The simulation to run")
+argparser.add_argument("--num-vehicles", 
+                       aliases=["-n"],
+                       required=True,
+                       type = int,
+                       metavar = "N",
+                       dest = "num_veh",
+                       help="Number of vehicles that will be in the simulation")
+argparser.add_argument("--step-length", 
+                       aliases=["-s"],
+                       type=int,
+                       default=0.5,
+                       metavar="S",
+                       dest="step_length",
+                       help="The step length of the simulation. Recommended to be above 0.5 seconds.")
+argparser.add_argument("--detectors",
+                       aliases=["-d"],
+                       required=True,
+                       type=list,
+                       metavar="D",
+                       dest="detectors",
+                       help="The E1 detectors used to track travel time.")
+argparser.add_argument("--output-file",
+                       aliases=["-o"],
+                       type=str,
+                       required=True,
+                       metavar="O",
+                       dest="output_file",
+                       help="The file to store the data in. Must end in \'.nc\'")
 
 # Simulation Step Length in seconds
 step_len = 0.5
