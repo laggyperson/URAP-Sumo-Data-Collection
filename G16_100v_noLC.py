@@ -157,6 +157,38 @@ def numberVehtoTL(vehID, tl_dist):
 
     return count
 
+"""
+Saves the data to a netCDF file specified in arguments. Data type is an xarray
+Params:
+    list data : The array to save
+    list veh_ids : Array of vehicle ids
+    str path : The filepath to
+Return:
+    bool : True if successfully saved data, False otherwise
+"""
+def save_data(data, veh_ids, path):
+    np_data = np.array(data)
+    
+    time = np.arange(len(np_data))
+    data_labels = ["Speed", "Max Speed", "Acceleration",
+                   "Traffic Light Distance", "Traffic Light State", "Traffic Light Time to Switch", "Number of Vehicles to Traffic Light",
+                   "Leading Vehicles Average Gap", "Leading Vehicles Average Speed", "Leading Vehicles Average Acceleration",
+                   "Right Lane Average Gap", "Right Lane Average Speed", "Right Lane Average Acceleration",
+                   "Left Lane Average Gap", "Left Lane Average Speed", "Left Lane Average Acceleration",
+                   "Passed Point"]
+    
+    xr_data = xr.DataArray(
+        data=np_data,
+        dims=["Time", "Veh IDs", "Data Labels"],
+        coords={
+            "Time": time,
+            "Veh IDs": veh_ids,
+            "Data Labels": data_labels
+        }
+    )
+
+    xr_data.to_netcdf(path)
+    
 # =========================== End Helper Functions ===========================
 
 # Arg parser
@@ -197,16 +229,21 @@ argparser.add_argument("--output-file",
                        dest="output_file",
                        help="The file to store the data in. Must end in \'.nc\'")
 
+args = argparser.parse_args()
+
 # Simulation Step Length in seconds
-step_len = 0.5
+step_len = args.step_length
 
 # Numbe of vehicles in simulation
-num_vehs = 100
+num_vehs = args.num_veh
+
+# Detectors
+detectors = args.detectors
 
 # Constructing sumo command (terminal)
 sumoBinary = "sumo-gui"
 sumoCmd = [sumoBinary, 
-    "-c", "sumocfg/G16_100v_noLC.sumocfg",
+    "-c", args.sumo_cfg_file,
     "--step-length", str(step_len)
 ]
 
@@ -237,7 +274,9 @@ try:
         # calc_neighbors = []
 
         # Induction Loop detector: see which vehicles have made the loop
-        passed_veh = traci.inductionloop.getLastStepVehicleIDs("e1_1") + traci.inductionloop.getLastStepVehicleIDs("e1_2")
+        passed_veh = []
+        for det in detectors:
+            passed_veh += traci.inductionloop.getLastStepVehicleIDs(det)
 
         for vehID in new_List:
             if vehID not in vehIDList:
@@ -338,14 +377,14 @@ try:
 
 except traci.exceptions.FatalTraCIError as e:
     print("Saving Data")
-    save_data()
+    save_data(data, vehIDList)
     if e == "connection closed by SUMO":
         print("Closing Connection")
     else:
         print("Fatal TraCI Error: {}".format(e))
 except KeyboardInterrupt:
     print("Saving Data")
-    save_data()
+    save_data(data, vehIDList)
     print("Closing Simulation and cleaning up actors")
     
     # Destroy all actors
