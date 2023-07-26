@@ -188,6 +188,8 @@ def save_data(data, veh_ids, path):
     )
 
     xr_data.to_netcdf(path)
+
+    return True
     
 # =========================== End Helper Functions ===========================
 
@@ -196,33 +198,28 @@ argparser = argparse.ArgumentParser(description="Specify simulation specs to run
 
 argparser.add_argument("sumo_cfg_file", 
                        type=str,
-                       required=True,
                        metavar="C",
-                       dest="sumo_cfg_file",
                        help = "The simulation to run")
-argparser.add_argument("--num-vehicles", 
-                       aliases=["-n"],
+argparser.add_argument("--num-vehicles", "-n",
                        required=True,
                        type = int,
                        metavar = "N",
                        dest = "num_veh",
                        help="Number of vehicles that will be in the simulation")
-argparser.add_argument("--step-length", 
-                       aliases=["-s"],
-                       type=int,
+argparser.add_argument("--step-length", "-s",
+                       type=float,
                        default=0.5,
                        metavar="S",
                        dest="step_length",
                        help="The step length of the simulation. Recommended to be above 0.5 seconds.")
-argparser.add_argument("--detectors",
-                       aliases=["-d"],
+argparser.add_argument("--detectors", "-d",
+                       nargs="+",
                        required=True,
-                       type=list,
+                       type=str,
                        metavar="D",
                        dest="detectors",
                        help="The E1 detectors used to track travel time.")
-argparser.add_argument("--output-file",
-                       aliases=["-o"],
+argparser.add_argument("--output-file", "-o",
                        type=str,
                        required=True,
                        metavar="O",
@@ -239,6 +236,9 @@ num_vehs = args.num_veh
 
 # Detectors
 detectors = args.detectors
+
+# Save path of output file
+path = args.output_file
 
 # Constructing sumo command (terminal)
 sumoBinary = "sumo-gui"
@@ -363,7 +363,7 @@ try:
         vehIDList = new_List
 
         # Appending Data to main data
-        if len(new_list) == num_vehs:
+        if len(new_List) == num_vehs:
             data.append(data_t)
 
         # Time control
@@ -377,14 +377,24 @@ try:
 
 except traci.exceptions.FatalTraCIError as e:
     print("Saving Data")
-    save_data(data, vehIDList)
+    success = save_data(data, vehIDList, path)
+    if success:
+        print("Successfully saved data")
+    else:
+        print("Encountered an issue with saving data")
+
     if e == "connection closed by SUMO":
         print("Closing Connection")
     else:
         print("Fatal TraCI Error: {}".format(e))
 except KeyboardInterrupt:
     print("Saving Data")
-    save_data(data, vehIDList)
+    success = save_data(data, vehIDList, path)
+    if success:
+        print("Successfully saved data")
+    else:
+        print("Encountered an issue with saving data")
+
     print("Closing Simulation and cleaning up actors")
     
     # Destroy all actors
