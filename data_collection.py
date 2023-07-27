@@ -158,7 +158,7 @@ def numberVehtoTL(vehID, tl_dist):
     return count
 
 """
-Saves the data to a netCDF file specified in arguments. Data type is an xarray
+Saves the data to a netCDF file specified in arguments. Data type is an xarray Dataset
 Params:
     list data : The array to save
     list veh_ids : Array of vehicle ids
@@ -166,17 +166,21 @@ Params:
 Return:
     bool : True if successfully saved data, False otherwise
 """
-def save_data(data, veh_ids, path):
+def save_data(data, veh_ids, path, step_length):
+    if len(data) == 0:
+        return False
+    
     np_data = np.array(data)
     
-    time = np.arange(len(np_data))
+    time = np.array([x * step_length for x in range(len(data))])
     data_labels = ["Speed", "Max Speed", "Acceleration",
                    "Traffic Light Distance", "Traffic Light State", "Traffic Light Time to Switch", "Number of Vehicles to Traffic Light",
                    "Leading Vehicles Average Gap", "Leading Vehicles Average Speed", "Leading Vehicles Average Acceleration",
                    "Right Lane Average Gap", "Right Lane Average Speed", "Right Lane Average Acceleration",
                    "Left Lane Average Gap", "Left Lane Average Speed", "Left Lane Average Acceleration",
                    "Passed Point"]
-    
+    veh_ids = np.array(veh_ids)
+
     xr_data = xr.DataArray(
         data=np_data,
         dims=["Time", "Veh IDs", "Data Labels"],
@@ -187,7 +191,8 @@ def save_data(data, veh_ids, path):
         }
     )
 
-    xr_data.to_netcdf(path)
+    xr_ds = xr.Dataset({"Data": xr_data})
+    xr_ds.to_netcdf(path)
 
     return True
     
@@ -302,6 +307,8 @@ try:
                     tl_state = 2
                 elif tl_state == 'g':
                     tl_state = 3
+                else:
+                    tl_state = 0
                 tl_timeChange = traci.trafficlight.getNextSwitch(tl_id) - t
                 tl_numBlock = numberVehtoTL(vehID, tl_dist)
 
@@ -377,7 +384,7 @@ try:
 
 except traci.exceptions.FatalTraCIError as e:
     print("Saving Data")
-    success = save_data(data, vehIDList, path)
+    success = save_data(data, vehIDList, path, step_len)
     if success:
         print("Successfully saved data")
     else:
@@ -389,7 +396,7 @@ except traci.exceptions.FatalTraCIError as e:
         print("Fatal TraCI Error: {}".format(e))
 except KeyboardInterrupt:
     print("Saving Data")
-    success = save_data(data, vehIDList, path)
+    success = save_data(data, vehIDList, path, step_len)
     if success:
         print("Successfully saved data")
     else:
