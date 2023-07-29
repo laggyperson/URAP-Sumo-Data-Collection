@@ -389,8 +389,8 @@ try:
         # Time control
         end_time = time.time()
         elapsed = end_time - start_time
-        # if elapsed < step_len:
-        #     time.sleep(step_len - elapsed)
+        if elapsed < step_len:
+            time.sleep(step_len - elapsed)
         
         traci.simulationStep() # Tick the simulation every 0.05 seconds
         t += step_len # Assuming that this operation takes negligible time
