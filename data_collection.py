@@ -422,3 +422,18 @@ except KeyboardInterrupt:
         traci.vehicle.remove(vehID)
 
     traci.close()
+finally:
+    print("Saving Data")
+    success = save_data(data, vehIDList, path, step_len)
+    if success:
+        print("Successfully saved data")
+    else:
+        print("Encountered an issue with saving data")
+
+    print("Closing Simulation and cleaning up actors")
+    
+    # Destroy all actors
+    for vehID in vehIDList:
+        traci.vehicle.remove(vehID)
+
+    traci.close()
