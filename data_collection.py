@@ -230,8 +230,17 @@ argparser.add_argument("--output-file", "-o",
                        metavar="O",
                        dest="output_file",
                        help="The file to store the data in. Must end in \'.nc\'")
+argparser.add_argument("--run-time", "-t",
+                       type=float,
+                       required=True,
+                       metavar="T",
+                       dest="run_time",
+                       help="The time to run the simulation for starting from when the data is collected (seconds)")
 
 args = argparser.parse_args()
+
+# The amount of time to run the simulation for
+run_time = args.run_time
 
 # Simulation Step Length in seconds
 step_len = args.step_length
@@ -264,8 +273,11 @@ data = []
 # Keeps track of time
 t = 0
 
+# Keeps track of simulation time
+sim_time = 0
+
 try:
-    while True:
+    while sim_time <= run_time:
         start_time = time.time()
 
         # Updating subscriptions to vehicles
@@ -274,6 +286,7 @@ try:
         # Start collecting data once number of vehicles reached max
         if len(new_List) == num_vehs:
             data_t = []
+            sim_time += step_len
 
         # # Neighbors whose data already calculated list for efficiency
         # calc_neighbors = []
