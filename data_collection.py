@@ -313,15 +313,6 @@ try:
                 tl_id = tl[0] # Id of next TL
                 tl_dist = tl[2] # Distance in meters
                 tl_state = tl[3] # string 'r', 'g', or 'y' (for more, see documentation)
-                # Discretize traffic light states
-                if tl_state == 'r':
-                    tl_state = 1
-                elif tl_state == 'y':
-                    tl_state = 2
-                elif tl_state == 'g':
-                    tl_state = 3
-                else:
-                    tl_state = 0
                 tl_timeChange = traci.trafficlight.getNextSwitch(tl_id) - t
                 tl_numBlock = numberVehtoTL(vehID, tl_dist)
 
