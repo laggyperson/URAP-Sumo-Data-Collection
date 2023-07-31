@@ -1,5 +1,5 @@
 """
-Data collection script that runs simulatiosn and saves the data
+Data collection script that runs simulations and saves the data
 
 Author: Phillip Chen
 Date: July 2023
@@ -215,13 +215,6 @@ argparser.add_argument("--step-length", "-s",
                        metavar="S",
                        dest="step_length",
                        help="The step length of the simulation. Recommended to be above 0.5 seconds.")
-argparser.add_argument("--detectors", "-d",
-                       nargs="+",
-                       required=True,
-                       type=str,
-                       metavar="D",
-                       dest="detectors",
-                       help="The E1 detectors used to track travel time.")
 argparser.add_argument("--output-file", "-o",
                        type=str,
                        required=True,
@@ -246,8 +239,8 @@ step_len = args.step_length
 # Numbe of vehicles in simulation
 num_vehs = args.num_veh
 
-# Detectors
-detectors = args.detectors
+# # Detectors - not using for now
+# detectors = traci.inductionloop.getIDList()
 
 # Save path of output file
 path = args.output_file
@@ -264,6 +257,22 @@ traci.start(sumoCmd)
 
 # Get vehicle IDs
 vehIDList = traci.vehicle.getIDList()
+
+# Dictionary of edges and corresponding length
+lanes = traci.lane.getIDList()
+edges = traci.edge.getIDList()
+edge_lengths = {}
+# Getting each element ot be a list of lane lengths
+for lane in lanes:
+    edgeID = tc.lane.getEdgeID(lane)
+    if edgeID in edge_lengths.keys():
+        edge_lengths[edgeID].append(tc.lane.getLength(lane))
+    else:
+        edge_lengths[edgeID] = [tc.lane.getLength(lane)]
+
+# Setting each value to be the averalge of the lane lengths
+for edge in edges:
+    edge_lengths[edgeID] = computeAverage(edge_lengths[edgeID])
 
 # Array holding all data
 data = []
@@ -289,16 +298,17 @@ try:
         # # Neighbors whose data already calculated list for efficiency
         # calc_neighbors = []
 
-        # Induction Loop detector: see which vehicles have made the loop
-        passed_veh = []
-        for det in detectors:
-            passed_veh += traci.inductionloop.getLastStepVehicleIDs(det)
+        # # Induction Loop detector: see which vehicles have made the loop
+        # passed_veh = []
+        # for det in detectors:
+        #     passed_veh += traci.inductionloop.getLastStepVehicleIDs(det)
 
         for vehID in new_List:
             if vehID not in vehIDList:
                 traci.vehicle.subscribe(vehID, [
                     tc.VAR_NEXT_TLS,
                     tc.VAR_POSITION3D, tc.VAR_SPEED, tc.VAR_ALLOWED_SPEED, tc.VAR_ACCELERATION,
+                    tc.VAR_ROAD_ID, tc.VAR_LANEPOSITION, tc.VAR_EDGES, tc.VAR_ROUTE_INDEX
                 ])
         
             v = traci.vehicle.getSubscriptionResults(vehID)
@@ -350,10 +360,12 @@ try:
                 left_lane_avg_speed = left_lane_velAccel[0]
                 left_lane_avg_accel = left_lane_velAccel[1]
 
-            # Checking if vehicle passed induction loop detector (unfortunately hard coded)
-            passed = 0
-            if vehID in passed_veh:
-                passed = 1
+            # Getting route information
+            curr_route = v[tc.VAR_EDGES]
+            curr_edge = v[tc.VAR_ROAD_ID]
+            route_length = 0
+            for edge in curr_route:
+                route_length += edge_lengths[edge]
 
             # Loading in data for this vehicle
             if len(new_List) == num_vehs:
