@@ -353,7 +353,7 @@ try:
                 left_lane_avg_accel = left_lane_velAccel[1]
 
             # Checking if vehicle passed induction loop detector (unfortunately hard coded)
-            passsed = 0
+            passed = 0
             if vehID in passed_veh:
                 passed = 1
 
