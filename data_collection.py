@@ -1,10 +1,8 @@
 """
-Data collection for:
-G16
-100 vehicles
-No lane changing
+Data collection script that runs simulatiosn and saves the data
 
-Phillip Chen: July 2023
+Author: Phillip Chen
+Date: July 2023
 """
 
 import os
