@@ -22,24 +22,26 @@ traci.setLegacyGetLeader(False)
 
 # =========================== Helper Functions ===========================
 """
-Finds specified number of vehicles in front of given vehicle ID and returns all IDs and distances as a list.
+Finds vehicles within specified range in front of given vehicle ID and returns all IDs and gaps as a list. 
 Returns empty lists if none exist
 Params:
     str vehID : The id the vehicle to start from
-    int num : number of vehicles to collect data on
+    float dist : The furthest vehicle to get data from relative to the given vehicle
 Ret:
     List[List] : list of two lists, first holding the ids, the second holding the gaps in meters
 """
-def findLeadingNeighbors(vehID, num):
+def findLeadingNeighbors(vehID, dist):
     ids = []
     gaps = []
 
     curr_ID = vehID
-    for _ in range(num):
+    dist_from_veh = 0
+    while dist_from_veh <= dist:
         info = traci.vehicle.getLeader(curr_ID)
         if len(info[0]) == 0 or info[0] in ids:
             break
         curr_ID = info[0]
+        dist_from_veh += info[1]
         ids.append(info[0])
         gaps.append(info[1])
 
@@ -62,15 +64,15 @@ def avgSpeedAccel(ids):
     return [computeAverage(speeds), computeAverage(accels)]
 
 """
-Returns the ids of specified number of vehicles in the right lane and the gaps between them
+Returns the ids of vehicles in range in the right lane and the gaps between them
 Returns empty lists if none exist
 Params:
     str vehID : the vehicle in question
-    int num : number of vehicles in front and behind on the right lane
+    float dist : distance range to search for vehicles in front and behind the given vehicle
 Return:
     List[List] : list of two lists, first holding the ids, the second holding the gaps in meters
 """
-def rightLaneInfo(vehID, num):
+def rightLaneInfo(vehID, dist):
     right_veh = traci.vehicle.getRightFollowers(vehID) # Picks a follower
 
     if len(right_veh) == 0:
@@ -78,59 +80,119 @@ def rightLaneInfo(vehID, num):
         if len(right_veh) == 0:
             return [[], []]
     
-    right_veh = right_veh[0][0]
-    res = findLeadingNeighbors(right_veh, num) # Get all vehicles in front of returned vehicle
-
-    # Finding all vehicles behind this returned vehicle
-    curr_ID = right_veh
-    for _ in range(num):
-        info = traci.vehicle.getFollower(curr_ID)
-        if len(info[0]) == 0 or info[0] in res[0]:
+    # Finding right vehicle that is in range
+    right_veh_ID = right_veh[0][0]
+    dist_to_right = right_veh[0][1]
+    front_ID = right_veh_ID
+    while abs(dist_to_right) > dist:
+        info = traci.vehicle.getLeader(front_ID)
+        if len(info[0]) == 0 or front_ID == right_veh_ID:
             break
-        curr_ID = info[0]
-        res[0].append(info[0])
-        res[1].append(info[1])
+        dist_to_right -= info[1]
+        if dist_to_right < 0 and abs(dist_to_right) > dist: # Passed the current vehicle, too far ahead
+            return [[], []] # Vehicles are too far away
+        front_ID = info[0]
 
-    return res
+    ids = [front_ID]
+    gaps = []
+
+    # Finding all vehicles in front of the returned vehicle
+    front = front_ID
+    temp_dist = dist_to_right
+    while abs(temp_dist) < dist:
+        info = traci.vehicle.getLeader(front)
+        if len(info[0]) == 0 or abs(temp_dist - info[1]) > dist:
+            break
+        temp_dist -= info[1]
+        front = info[0]
+        gaps.append(info[1])
+        ids.append(front)
+
+    
+    # Finding all vehicles behind this returned vehicle
+    back = front_ID
+    temp_dist = dist_to_right
+    while abs(temp_dist) < dist:
+        info = traci.vehicle.getLeader(front_ID)
+        if len(info[0]) == 0 or abs(temp_dist + info[1]) > dist:
+            break
+        temp_dist += info[1]
+        back = info[0]
+        gaps.append(info[1])
+        ids.append(back)
+
+    return [ids, gaps]
 
 """
-Returns the ids of specified number of vehicles in the left lane and the gaps between them. 
+Returns the ids of vehicles in range in the left lane and the gaps between them
 Returns empty lists if none exist
 Params:
     str vehID : the vehicle in question
+    float dist : distance range to search for vehicles in front and behind the given vehicle
 Return:
     List[List] : list of two lists, first holding the ids, the second holding the gaps in meters
 """
-def leftLaneInfo(vehID, num):
+def leftLaneInfo(vehID, dist):
     left_veh = traci.vehicle.getLeftFollowers(vehID) # Picks a follower
     
     if len(left_veh) == 0:
         left_veh = traci.vehicle.getLeftLeaders(vehID)
         if len(left_veh) == 0:
             return [[], []]
-    left_veh = left_veh[0][0]
-    res = findLeadingNeighbors(left_veh, num) # Get all vehicles in front of returned vehicle
-
-    # Finding all vehicles behind this returned vehicle
-    curr_ID = left_veh
-    for _ in range(num):
-        info = traci.vehicle.getFollower(curr_ID)
-        if len(info[0]) == 0 or info[0] in res[0]:
+    
+    # Finding left vehicle that is in range
+    left_veh_ID = left_veh[0][0]
+    dist_to_left = left_veh[0][1]
+    front_ID = left_veh_ID
+    while abs(dist_to_left) > dist:
+        info = traci.vehicle.getLeader(front_ID)
+        if len(info[0]) == 0 or front_ID == left_veh_ID:
             break
-        curr_ID = info[0]
-        res[0].append(info[0])
-        res[1].append(info[1])
+        dist_to_left -= info[1]
+        if dist_to_left < 0 and abs(dist_to_left) > dist: # Passed the current vehicle, too far ahead
+            return [[], []] # Vehicles are too far away
+        front_ID = info[0]
 
-    return res
+    ids = [front_ID]
+    gaps = []
+
+    # Finding all vehicles in front of the returned vehicle
+    front = front_ID
+    temp_dist = dist_to_left
+    while abs(temp_dist) < dist:
+        info = traci.vehicle.getLeader(front)
+        if len(info[0]) == 0 or abs(temp_dist - info[1]) > dist:
+            break
+        temp_dist -= info[1]
+        front = info[0]
+        gaps.append(info[1])
+        ids.append(front)
+
+    
+    # Finding all vehicles behind this returned vehicle
+    back = front_ID
+    temp_dist = dist_to_left
+    while abs(temp_dist) < dist:
+        info = traci.vehicle.getLeader(front_ID)
+        if len(info[0]) == 0 or abs(temp_dist + info[1]) > dist:
+            break
+        temp_dist += info[1]
+        back = info[0]
+        gaps.append(info[1])
+        ids.append(back)
+
+    return [ids, gaps]
 
 """
-Computes average of given list
+Computes average of given list. Returns -1 if list is empty
 Params:
     List l : the list to compute the average of
 Ret:
     float : average of list
 """
 def computeAverage(l):
+    if len(l) == 0:
+        return -1
     return sum(l) / len(l)
 
 """
@@ -311,7 +373,9 @@ try:
             veh_accel = v[tc.VAR_ACCELERATION] # How fast vehicle is accelerating
 
             # Getting neighbor information 
-            leading_info = findLeadingNeighbors(vehID, 5)
+            # Distance range set to the speed of the vehicle (i.e. 25 m if vehicle moving at 25 m/s)
+            leading_info = findLeadingNeighbors(vehID, veh_speed)
+            leading_number = len(leading_info[0])
             leading_avg_gap = -1 
             leading_avg_speed = -1
             leading_avg_accel = -1
@@ -321,7 +385,8 @@ try:
                 leading_avg_speed = leading_velAccel[0]
                 leading_avg_accel = leading_velAccel[1]
 
-            right_lane_info = rightLaneInfo(vehID, 5)
+            right_lane_info = rightLaneInfo(vehID, veh_speed)
+            right_lane_number = len(right_lane_info[0])
             right_lane_avg_gap = -1
             right_lane_avg_speed = -1
             right_lane_avg_accel = -1
@@ -331,7 +396,8 @@ try:
                 right_lane_avg_speed = right_lane_velAccel[0]
                 right_lane_avg_accel = right_lane_velAccel[1]
 
-            left_lane_info = leftLaneInfo(vehID, 5)
+            left_lane_info = leftLaneInfo(vehID, veh_speed)
+            left_lane_number = len(left_lane_info[0])
             left_lane_avg_gap = -1
             left_lane_avg_speed = -1
             left_lane_avg_accel = -1
@@ -365,9 +431,9 @@ try:
                 data_v = [
                     veh_speed, veh_max_speed, veh_accel,
                     tl_dist, tl_state, tl_timeChange, tl_numBlock,
-                    leading_avg_gap, leading_avg_speed, leading_avg_accel,
-                    right_lane_avg_gap, right_lane_avg_speed, right_lane_avg_accel,
-                    left_lane_avg_gap, left_lane_avg_speed, left_lane_avg_accel,
+                    leading_number, leading_avg_gap, leading_avg_speed, leading_avg_accel,
+                    right_lane_number, right_lane_avg_gap, right_lane_avg_speed, right_lane_avg_accel,
+                    left_lane_number, left_lane_avg_gap, left_lane_avg_speed, left_lane_avg_accel,
                     dest, route_length, reached
                 ]
                 data_t.append(data_v)
