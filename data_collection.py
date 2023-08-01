@@ -407,8 +407,6 @@ try:
                 left_lane_avg_speed = left_lane_velAccel[0]
                 left_lane_avg_accel = left_lane_velAccel[1]
             
-            if vehID == "f_0.o": print(leading_info[0], '\n', right_lane_info[0], '\n', left_lane_info[0], '\n', veh_speed, '\n\n')
-
             # Getting route information
             curr_route = v[tc.VAR_EDGES]
             curr_edge = v[tc.VAR_ROAD_ID]
