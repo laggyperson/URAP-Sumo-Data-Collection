@@ -236,9 +236,9 @@ def save_data(data, veh_ids, path, step_length):
     time = np.array([x * step_length for x in range(len(data))])
     data_labels = ["Speed", "Max Speed", "Acceleration",
                    "Traffic Light Distance", "Traffic Light State", "Traffic Light Time to Switch", "Number of Vehicles to Traffic Light",
-                   "Leading Vehicles Average Gap", "Leading Vehicles Average Speed", "Leading Vehicles Average Acceleration",
-                   "Right Lane Average Gap", "Right Lane Average Speed", "Right Lane Average Acceleration",
-                   "Left Lane Average Gap", "Left Lane Average Speed", "Left Lane Average Acceleration",
+                   "Number of Leading Vehicles", "Leading Vehicles Average Gap", "Leading Vehicles Average Speed", "Leading Vehicles Average Acceleration",
+                   "Number of Right Lane Vehicles", "Right Lane Average Gap", "Right Lane Average Speed", "Right Lane Average Acceleration",
+                   "Number of Left Lane Vehicles", "Left Lane Average Gap", "Left Lane Average Speed", "Left Lane Average Acceleration",
                    "Destination Edge", "Distance to Edge", "Destination Reached"]
     veh_ids = np.array(veh_ids)
 
@@ -406,6 +406,8 @@ try:
                 left_lane_velAccel = avgSpeedAccel(left_lane_info[0])
                 left_lane_avg_speed = left_lane_velAccel[0]
                 left_lane_avg_accel = left_lane_velAccel[1]
+            
+            if vehID == "f_0.o": print(leading_info[0], '\n', right_lane_info[0], '\n', left_lane_info[0], '\n', veh_speed, '\n\n')
 
             # Getting route information
             curr_route = v[tc.VAR_EDGES]
