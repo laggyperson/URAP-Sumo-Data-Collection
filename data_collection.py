@@ -240,9 +240,6 @@ step_len = args.step_length
 # Numbe of vehicles in simulation
 num_vehs = args.num_veh
 
-# # Detectors - not using for now
-# detectors = traci.inductionloop.getIDList()
-
 # Save path of output file
 path = args.output_file
 
@@ -261,10 +258,8 @@ vehIDList = traci.vehicle.getIDList()
 
 # Dictionary of edges and corresponding length
 tmp_edges = traci.edge.getIDList()
-
 # Filtering out internal edges
 edges = [e for e in tmp_edges if ":" not in e]
-
 # Target edges for each vehicle
 target_edges = {}
 
@@ -288,14 +283,6 @@ try:
         if len(new_List) == num_vehs:
             data_t = []
             sim_time += step_len
-
-        # # Neighbors whose data already calculated list for efficiency
-        # calc_neighbors = []
-
-        # # Induction Loop detector: see which vehicles have made the loop
-        # passed_veh = []
-        # for det in detectors:
-        #     passed_veh += traci.inductionloop.getLastStepVehicleIDs(det)
 
         for vehID in new_List:
             if vehID not in vehIDList:
