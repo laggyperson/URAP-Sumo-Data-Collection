@@ -15,6 +15,7 @@ import time
 import numpy as np
 import xarray as xr
 import argparse
+import random 
 
 # Turning off legacy mode
 traci.setLegacyGetLeader(False)
@@ -259,20 +260,28 @@ traci.start(sumoCmd)
 vehIDList = traci.vehicle.getIDList()
 
 # Dictionary of edges and corresponding length
-lanes = traci.lane.getIDList()
-edges = traci.edge.getIDList()
+tmp_lanes = traci.lane.getIDList()
+tmp_edges = traci.edge.getIDList()
+
+# Filtering out internal edges
+lanes = [l for l in tmp_lanes if ":" not in l]
+edges = [e for e in tmp_edges if ":" not in e]
+
 edge_lengths = {}
 # Getting each element ot be a list of lane lengths
-for lane in lanes:
-    edgeID = tc.lane.getEdgeID(lane)
+for l in lanes:
+    edgeID = traci.lane.getEdgeID(l)
     if edgeID in edge_lengths.keys():
-        edge_lengths[edgeID].append(tc.lane.getLength(lane))
+        edge_lengths[edgeID].append(traci.lane.getLength(l))
     else:
-        edge_lengths[edgeID] = [tc.lane.getLength(lane)]
+        edge_lengths[edgeID] = [traci.lane.getLength(l)]
 
 # Setting each value to be the averalge of the lane lengths
 for edge in edges:
-    edge_lengths[edgeID] = computeAverage(edge_lengths[edgeID])
+    edge_lengths[edge] = computeAverage(edge_lengths[edge])
+
+# Target edges for each vehicle
+target_edges = {}
 
 # Array holding all data
 data = []
@@ -363,9 +372,20 @@ try:
             # Getting route information
             curr_route = v[tc.VAR_EDGES]
             curr_edge = v[tc.VAR_ROAD_ID]
+            curr_pos = v[tc.VAR_LANEPOSITION]
+            route_index = v[tc.VAR_ROUTE_INDEX]
+            reached = 'n'
+
+            if vehID == "f_0.0": print("Curr Route", curr_route, curr_edge)
+            if route_index == len(curr_route) - 1:
+                reached = 'y'
+                traci.vehicle.changeTarget(vehID, random.choice(edges))
+                if vehID == "f_0.0": print("New Route", curr_route, curr_edge)
+            
             route_length = 0
             for edge in curr_route:
                 route_length += edge_lengths[edge]
+            
 
             # Loading in data for this vehicle
             if len(new_List) == num_vehs:
@@ -374,8 +394,7 @@ try:
                     tl_dist, tl_state, tl_timeChange, tl_numBlock,
                     leading_avg_gap, leading_avg_speed, leading_avg_accel,
                     right_lane_avg_gap, right_lane_avg_speed, right_lane_avg_accel,
-                    left_lane_avg_gap, left_lane_avg_speed, left_lane_avg_accel,
-                    passed
+                    left_lane_avg_gap, left_lane_avg_speed, left_lane_avg_accel
                 ]
                 data_t.append(data_v)
 

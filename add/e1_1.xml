@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2023-07-31 15:29:06 by Eclipse SUMO GUI Version 1.14.1
+<!-- generated on 2023-07-31 20:20:16 by Eclipse SUMO GUI Version 1.14.1
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
         <net-file value="sumocfg/../net/G16.net.xml"/>
         <route-files value="sumocfg/../rou/G16_100v_noLC.rou.xml"/>
-        <additional-files value="sumocfg/../add/G16_equal_dest.add.xml,sumocfg/../add/G16_detectors.add.xml"/>
+        <additional-files value="sumocfg/../add/G16_detectors.add.xml"/>
     </input>
 
     <time>
@@ -14,12 +14,12 @@
     </time>
 
     <traci_server>
-        <remote-port value="62077"/>
+        <remote-port value="63334"/>
     </traci_server>
 
 </configuration>
 -->
 
 <detector xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/det_e1_file.xsd">
-    <interval begin="0.00" end="44.50" id="e1_1" nVehContrib="13" flow="1051.69" occupancy="27.40" speed="11.16" harmonicMeanSpeed="5.33" length="5.00" nVehEntered="13"/>
+    <interval begin="0.00" end="110.00" id="e1_1" nVehContrib="31" flow="1014.55" occupancy="13.72" speed="12.96" harmonicMeanSpeed="10.31" length="5.00" nVehEntered="32"/>
 </detector>
