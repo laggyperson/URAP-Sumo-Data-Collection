@@ -113,7 +113,7 @@ def rightLaneInfo(vehID, dist):
     back = front_ID
     temp_dist = dist_to_right
     while abs(temp_dist) < dist:
-        info = traci.vehicle.getLeader(front_ID)
+        info = traci.vehicle.getFollower(back)
         if len(info[0]) == 0 or abs(temp_dist + info[1]) > dist:
             break
         temp_dist += info[1]
@@ -173,7 +173,7 @@ def leftLaneInfo(vehID, dist):
     back = front_ID
     temp_dist = dist_to_left
     while abs(temp_dist) < dist:
-        info = traci.vehicle.getLeader(front_ID)
+        info = traci.vehicle.getFollower(back)
         if len(info[0]) == 0 or abs(temp_dist + info[1]) > dist:
             break
         temp_dist += info[1]
