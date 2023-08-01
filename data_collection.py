@@ -177,7 +177,7 @@ def save_data(data, veh_ids, path, step_length):
                    "Leading Vehicles Average Gap", "Leading Vehicles Average Speed", "Leading Vehicles Average Acceleration",
                    "Right Lane Average Gap", "Right Lane Average Speed", "Right Lane Average Acceleration",
                    "Left Lane Average Gap", "Left Lane Average Speed", "Left Lane Average Acceleration",
-                   "Passed Point"]
+                   "Destination Edge", "Distance to Edge", "Destination Reached"]
     veh_ids = np.array(veh_ids)
 
     xr_data = xr.DataArray(
@@ -260,25 +260,10 @@ traci.start(sumoCmd)
 vehIDList = traci.vehicle.getIDList()
 
 # Dictionary of edges and corresponding length
-tmp_lanes = traci.lane.getIDList()
 tmp_edges = traci.edge.getIDList()
 
 # Filtering out internal edges
-lanes = [l for l in tmp_lanes if ":" not in l]
 edges = [e for e in tmp_edges if ":" not in e]
-
-edge_lengths = {}
-# Getting each element ot be a list of lane lengths
-for l in lanes:
-    edgeID = traci.lane.getEdgeID(l)
-    if edgeID in edge_lengths.keys():
-        edge_lengths[edgeID].append(traci.lane.getLength(l))
-    else:
-        edge_lengths[edgeID] = [traci.lane.getLength(l)]
-
-# Setting each value to be the averalge of the lane lengths
-for edge in edges:
-    edge_lengths[edge] = computeAverage(edge_lengths[edge])
 
 # Target edges for each vehicle
 target_edges = {}
@@ -374,17 +359,18 @@ try:
             curr_edge = v[tc.VAR_ROAD_ID]
             curr_pos = v[tc.VAR_LANEPOSITION]
             route_index = v[tc.VAR_ROUTE_INDEX]
+            
+            # Data Variables
             reached = 'n'
+            dest = curr_route[-1]
 
-            if vehID == "f_0.0": print("Curr Route", curr_route, curr_edge)
             if route_index == len(curr_route) - 1:
                 reached = 'y'
-                traci.vehicle.changeTarget(vehID, random.choice(edges))
-                if vehID == "f_0.0": print("New Route", curr_route, curr_edge)
+                dest = random.choice(edges)
+                traci.vehicle.changeTarget(vehID, dest)
+                target_edges[vehID] = dest
             
-            route_length = 0
-            for edge in curr_route:
-                route_length += edge_lengths[edge]
+            route_length = traci.vehicle.getDrivingDistance(vehID, dest, 0)
             
 
             # Loading in data for this vehicle
@@ -394,7 +380,8 @@ try:
                     tl_dist, tl_state, tl_timeChange, tl_numBlock,
                     leading_avg_gap, leading_avg_speed, leading_avg_accel,
                     right_lane_avg_gap, right_lane_avg_speed, right_lane_avg_accel,
-                    left_lane_avg_gap, left_lane_avg_speed, left_lane_avg_accel
+                    left_lane_avg_gap, left_lane_avg_speed, left_lane_avg_accel,
+                    dest, route_length, reached
                 ]
                 data_t.append(data_v)
 
