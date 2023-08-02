@@ -41,7 +41,7 @@ def findLeadingNeighbors(vehID, dist):
         if len(info[0]) == 0 or info[0] in ids:
             break
         curr_ID = info[0]
-        dist_from_veh += info[1]
+        dist_from_veh += info[1] + 5 # Vehicles are 5 meters long
         ids.append(info[0])
         gaps.append(info[1])
 
@@ -88,7 +88,7 @@ def rightLaneInfo(vehID, dist):
         info = traci.vehicle.getLeader(front_ID)
         if len(info[0]) == 0 or front_ID == right_veh_ID:
             break
-        dist_to_right -= info[1]
+        dist_to_right -= (info[1] + 5)
         if dist_to_right < 0 and abs(dist_to_right) > dist: # Passed the current vehicle, too far ahead
             return [[], []] # Vehicles are too far away
         front_ID = info[0]
@@ -103,7 +103,7 @@ def rightLaneInfo(vehID, dist):
         info = traci.vehicle.getLeader(front)
         if len(info[0]) == 0 or abs(temp_dist - info[1]) > dist:
             break
-        temp_dist -= info[1]
+        temp_dist -= (info[1] + 5)
         front = info[0]
         gaps.append(info[1])
         ids.append(front)
@@ -116,7 +116,7 @@ def rightLaneInfo(vehID, dist):
         info = traci.vehicle.getFollower(back)
         if len(info[0]) == 0 or abs(temp_dist + info[1]) > dist:
             break
-        temp_dist += info[1]
+        temp_dist += (info[1] + 5)
         back = info[0]
         gaps.append(info[1])
         ids.append(back)
@@ -374,7 +374,9 @@ try:
 
             # Getting neighbor information 
             # Distance range set to the speed of the vehicle (i.e. 25 m if vehicle moving at 25 m/s)
-            leading_info = findLeadingNeighbors(vehID, veh_speed)
+            # But minimum is 5 meters
+            dist = max(veh_speed, 10)
+            leading_info = findLeadingNeighbors(vehID, dist)
             leading_number = len(leading_info[0])
             leading_avg_gap = -1 
             leading_avg_speed = -1
@@ -385,7 +387,7 @@ try:
                 leading_avg_speed = leading_velAccel[0]
                 leading_avg_accel = leading_velAccel[1]
 
-            right_lane_info = rightLaneInfo(vehID, veh_speed)
+            right_lane_info = rightLaneInfo(vehID, dist)
             right_lane_number = len(right_lane_info[0])
             right_lane_avg_gap = -1
             right_lane_avg_speed = -1
@@ -396,7 +398,7 @@ try:
                 right_lane_avg_speed = right_lane_velAccel[0]
                 right_lane_avg_accel = right_lane_velAccel[1]
 
-            left_lane_info = leftLaneInfo(vehID, veh_speed)
+            left_lane_info = leftLaneInfo(vehID, dist)
             left_lane_number = len(left_lane_info[0])
             left_lane_avg_gap = -1
             left_lane_avg_speed = -1

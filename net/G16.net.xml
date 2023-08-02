@@ -395,7 +395,7 @@
         <param key="linkSignalID:3" value="92"/>
     </tlLogic>
     <tlLogic id="35" type="static" programID="0" offset="0">
-        <phase duration="3"  state="gg"/>
+        <phase duration="10"  state="gg"/>
         <phase duration="3"  state="yy"/>
         <phase duration="3"  state="rr"/>
         <param key="linkSignalID:0" value="94"/>
