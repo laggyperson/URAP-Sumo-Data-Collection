@@ -6,8 +6,9 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="../../../URAP%20-%20CARLA/Sumo%20Data%20Collection/net/Town01.net.xml"/>
-        <additional-files value="../../../URAP%20-%20CARLA/Sumo%20Data%20Collection/add/Town01_equal_reroute.add.xml"/>
+        <net-file value="../net/Town01.net.xml"/>
+        <additional-files value="../add/Town01_equal_reroute.add.xml"/>
+        <route-files value="../rou/Town01_100v_LC.rou.xml"/>
     </input>
 
 </configuration>
