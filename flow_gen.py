@@ -1,9 +1,9 @@
 """
-Script to generate rerouters that go to random destination edges given set of edges in graph and a file to output it to.
+Script to generate flows that reach a target number of vehicles, given set of edges in graph and a file to output it to.
 Default is the G16 edges and predetermined filename
 
 Author: Phillip Chen
-Date: July 2023
+Date: April 2024
 """
 """
 Edges for Gomentum: ["16", "-11", "-0", "3", "6", "-24", "13", "15", "12", "4", "22", "25", "5", "21", "14"]
@@ -14,7 +14,7 @@ import argparse
 import xml.etree.ElementTree as ET
 import xml.dom.minidom
 
-argparser = argparse.ArgumentParser(description="Optional: Specify edges in the graph to add rerouters for")
+argparser = argparse.ArgumentParser(description="Specify edges in the graph to add flows for. Specify the number of vehicles desired.")
 
 argparser.add_argument("--edges", "-e",
                        metavar="E",
@@ -29,42 +29,45 @@ argparser.add_argument("--output-file", "-o",
                        default="add/G16_equal_dest.add.xml",
                        dest="output_file",
                        help="The file to output the rerouters to; default in additional folder for G16.")
+argparser.add_argument("--num-vehicles", "-n",
+                       metavar="N",
+                       type=int,
+                       default=100,
+                       dest="num_vehicles",
+                       help="Specify the number of edges you want in this simulation.")
 args = argparser.parse_args()
 
 edges = args.edges
 output_file = args.output_file
+num_vehicles = args.num_vehicles
 
-prob = round(1 / (len(edges) - 1), 3)
+n_edge = len(edges)
+# Number of vehicles per edge
+n_veh_edge = num_vehicles // n_edge
+flow_cnts = {i: n_veh_edge for i in range(n_edge)}
+# Round robin the remainder
+for i in range(num_vehicles - n_edge * n_veh_edge):
+    flow_cnts[i % n_edge] += 1
 
-# Take into account that the probabilities have to add up to 1
-extra = round(1 - (prob * (len(edges) - 2)), 3)
+# The root of the file, which specifies routes type
+root = ET.Element("routes")
 
-# The root of the file, which specifies additional type
-root = ET.Element("additional")
+for i in range(n_edge):
+    # The element and its id
+    flow_id = "f" + "_" + str(i)
+    flow = ET.Element("flow")
+    
+    # Setting the element parameters
+    flow.set("id", flow_id)
+    flow.set("type", "DEFAULT_VEHTYPE")
+    flow.set("from", edges[i])
+    flow.set("to", edges[i])
+    flow.set("vehsPerHour", "1000.00")
+    flow.set("departLane", "random")
+    flow.set("begin", "0.0")
+    flow.set("number", str(flow_cnts[i]))
 
-for i in range(len(edges)):
-    rr_id = "rr" + "_" + str(i)
-    rerouter = ET.Element("rerouter")
-    rerouter.set("id", rr_id)
-    rerouter.set("edges", edges[i])
-    rerouter.set("pos", "0.0")
-
-    # The time the rerouter is active for
-    interval = ET.SubElement(rerouter, "interval")
-    interval.set("begin", "0.0")
-    interval.set("end", "3600.00")
-
-    for j in range(len(edges)):
-        if i != j and j == len(edges) - 1: # Biases towards the last edge just a little bit
-            dest = ET.SubElement(interval, "destProbReroute")
-            dest.set("id", edges[j])
-            dest.set("probability", str(extra))
-        elif i != j:
-            dest = ET.SubElement(interval, "destProbReroute")
-            dest.set("id", edges[j])
-            dest.set("probability", str(prob))
-
-    root.append(rerouter)
+    root.append(flow)
 
 # Creating xml tree
 tree = ET.ElementTree(root)
