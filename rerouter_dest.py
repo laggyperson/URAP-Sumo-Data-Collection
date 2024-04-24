@@ -5,6 +5,9 @@ Default is the G16 edges and predetermined filename
 Author: Phillip Chen
 Date: July 2023
 """
+"""
+Edges for Town01: ["0", "1", "-1", "2", "-2", "-3", "-4", "4", "5", "6", "-6", "7", "-7", "-8", "-9", "9", "10", "-10", "12", "-12", "16", "-16", "17", "-17", "18", "-18", "-19", "19", "21", "-21", "22", "-22", "23", "-23", "24", "-24", "25", "-25"]
+"""
 
 import argparse
 import xml.etree.ElementTree as ET

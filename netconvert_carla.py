@@ -34,7 +34,7 @@ import sys
 
 try:
     sys.path.append(
-        glob.glob('../../../PythonAPI/carla/dist/carla-*%d.%d-%s.egg' %
+        glob.glob('carla/dist/carla-*%d.%d-%s.egg' %
                   (sys.version_info.major, sys.version_info.minor,
                    'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
 except IndexError:
@@ -381,7 +381,7 @@ def _netconvert_carla_impl(xodr_file, output, tmpdir, guess_tls=False):
             '--geometry.remove',
             '--opendrive.curve-resolution', '1',
             '--opendrive.import-all-lanes',
-            '--type-files', os.path.join(basedir, 'data/opendrive_netconvert.typ.xml'),
+            '--type-files', os.path.join(basedir, 'CARLA OpenDrive Maps/opendrive_netconvert.typ.xml'),
             # Necessary to link odr and sumo ids.
             '--output.original-names',
             # Discard loading traffic lights as them will be inserted manually afterwards.
