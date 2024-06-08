@@ -6,81 +6,81 @@
 <additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
     <!-- Other additionals -->
     <rerouter id="rr_0" edges="16" pos="231.06,271.12">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="-11" probability="0.50"/>
             <destProbReroute id="15" probability="0.50"/>
         </interval>
     </rerouter>
     <rerouter id="rr_1" edges="-11" pos="272.17,376.72">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="4" probability="1.00"/>
         </interval>
     </rerouter>
     <rerouter id="rr_10" edges="-0" pos="676.98,238.83">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="3" probability="0.50"/>
             <destProbReroute id="-24" probability="0.50"/>
         </interval>
     </rerouter>
     <rerouter id="rr_11" edges="3" pos="608.75,227.91">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="6" probability="1.00"/>
         </interval>
     </rerouter>
     <rerouter id="rr_12" edges="6" pos="411.59,332.80">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="5" probability="1.00"/>
         </interval>
     </rerouter>
     <rerouter id="rr_13" edges="-24" pos="359.51,67.17">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="16" probability="1.00"/>
         </interval>
     </rerouter>
     <rerouter id="rr_14" edges="13" pos="351.53,108.57">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="16" probability="1.00"/>
         </interval>
     </rerouter>
     <rerouter id="rr_2" edges="15" pos="38.85,372.39">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="12" probability="1.00"/>
         </interval>
     </rerouter>
     <rerouter id="rr_3" edges="12" pos="200.65,428.45">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="22" probability="1.00"/>
         </interval>
     </rerouter>
     <rerouter id="rr_4" edges="4" pos="230.33,434.22">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="22" probability="1.00"/>
         </interval>
     </rerouter>
     <rerouter id="rr_5" edges="22" pos="433.97,437.93">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="21" probability="0.50"/>
             <destProbReroute id="25" probability="0.50"/>
         </interval>
     </rerouter>
     <rerouter id="rr_6" edges="25" pos="384.30,348.69">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="5" probability="1.00"/>
         </interval>
     </rerouter>
     <rerouter id="rr_7" edges="5" pos="289.28,397.95">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="4" probability="1.00"/>
         </interval>
     </rerouter>
     <rerouter id="rr_8" edges="21" pos="617.62,333.23">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="-0" probability="0.50"/>
             <destProbReroute id="14" probability="0.50"/>
         </interval>
     </rerouter>
     <rerouter id="rr_9" edges="14" pos="580.93,247.49">
-        <interval begin="0.00" end="3600.00">
+        <interval begin="0.00" end="7200.00">
             <destProbReroute id="6" probability="0.50"/>
             <destProbReroute id="13" probability="0.50"/>
         </interval>

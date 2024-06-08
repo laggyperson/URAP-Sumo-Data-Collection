@@ -272,12 +272,12 @@ argparser.add_argument("--num-vehicles", "-n",
                        metavar = "N",
                        dest = "num_veh",
                        help="Number of vehicles that will be in the simulation")
-argparser.add_argument("--step-length", "-s",
+argparser.add_argument("--period", "-p",
                        type=float,
                        default=0.5,
-                       metavar="S",
-                       dest="step_length",
-                       help="The step length of the simulation. Recommended to be above 0.5 seconds.")
+                       metavar="P",
+                       dest="period",
+                       help="The period of data collection. Recommended to be above 0.5 seconds")
 argparser.add_argument("--output-file", "-o",
                        type=str,
                        required=True,
@@ -297,7 +297,7 @@ args = argparser.parse_args()
 run_time = args.run_time
 
 # Simulation Step Length in seconds
-step_len = args.step_length
+period = args.period
 
 # Numbe of vehicles in simulation
 num_vehs = args.num_veh
@@ -306,10 +306,11 @@ num_vehs = args.num_veh
 path = args.output_file
 
 # Constructing sumo command (terminal)
+# Simulation step length is 0.5 second ALWAYS
 sumoBinary = "sumo-gui"
 sumoCmd = [sumoBinary, 
     "-c", args.sumo_cfg_file,
-    "--step-length", str(step_len)
+    "--step-length", "0.5"
 ]
 
 # Sending command
@@ -344,8 +345,8 @@ try:
         # Start collecting data once number of vehicles reached max
         if len(new_List) == num_vehs:
             data_t = []
-            sim_time += step_len
-
+            sim_time += 0.5
+        
         for vehID in new_List:
             if vehID not in vehIDList:
                 traci.vehicle.subscribe(vehID, [
@@ -355,6 +356,12 @@ try:
                 ])
         
             v = traci.vehicle.getSubscriptionResults(vehID)
+
+            # # Only collect data every "period" time steps
+            # if  len(new_List) == num_vehs:
+            #     traci.simulationStep() # Tick the simulation
+            #     t += 0.5 # Assuming that this operation takes negligible time
+            #     continue
             
             # Traffic light Data
             # Default Values
@@ -429,7 +436,7 @@ try:
             
 
             # Loading in data for this vehicle
-            if len(new_List) == num_vehs:
+            if len(new_List) == num_vehs and sim_time % period == 0:
                 data_v = [
                     veh_speed, veh_max_speed, veh_accel,
                     tl_dist, tl_state, tl_timeChange, tl_numBlock,
@@ -447,19 +454,13 @@ try:
         # Appending Data to main data
         if len(new_List) == num_vehs:
             data.append(data_t)
-
-        # Time control
-        end_time = time.time()
-        elapsed = end_time - start_time
-        if elapsed < step_len:
-            time.sleep(step_len - elapsed)
         
-        traci.simulationStep() # Tick the simulation every 0.05 seconds
-        t += step_len # Assuming that this operation takes negligible time
+        traci.simulationStep() # Tick the simulation
+        t += 0.5 # Assuming that this operation takes negligible time
 
 except traci.exceptions.FatalTraCIError as e:
     print("Saving Data")
-    success = save_data(data, vehIDList, path, step_len)
+    success = save_data(data, vehIDList, path, period)
     if success:
         print("Successfully saved data")
     else:
@@ -471,7 +472,7 @@ except traci.exceptions.FatalTraCIError as e:
         print("Fatal TraCI Error: {}".format(e))
 except KeyboardInterrupt:
     print("Saving Data")
-    success = save_data(data, vehIDList, path, step_len)
+    success = save_data(data, vehIDList, path, period)
     if success:
         print("Successfully saved data")
     else:
@@ -486,7 +487,7 @@ except KeyboardInterrupt:
     traci.close()
 finally:
     print("Saving Data")
-    success = save_data(data, vehIDList, path, step_len)
+    success = save_data(data, vehIDList, path, period)
     if success:
         print("Successfully saved data")
     else:
