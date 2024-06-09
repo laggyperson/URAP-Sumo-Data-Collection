@@ -443,11 +443,11 @@ sim_time = 0
 
 try:
     while sim_time <= run_time:
-        start_time = time.time()
-
         # Updating subscriptions to vehicles
         new_List = traci.vehicle.getIDList()
-
+        
+        # For holding all vehicle data at this time step if data is being collected
+        data_t = []
         
         for vehID in new_List:
             if vehID not in vehIDList:
@@ -468,18 +468,21 @@ try:
 
             # Collect data if at max vehicle count. Also collect at every "period " time steps
             if len(new_List) == num_vehs:
-                sim_time += 0.5
                 if sim_time % period == 0:
-                    data.append([collect_data(vehID, v)])
+                    data_t.append(collect_data(vehID, v))
 
         # Updating list
         vehIDList = new_List
+
+        if len(new_List) == num_vehs:
+            sim_time += 0.5
+            if len(data_t) != 0:
+                data.append(data_t)
         
         traci.simulationStep() # Tick the simulation
         t += 0.5 # Assuming that this operation takes negligible time
 
 except traci.exceptions.FatalTraCIError as e:
-    print("ERROR: {}".format(e))
     call_save_data(data, vehIDList, path, period)
 
     if e == "connection closed by SUMO":
@@ -495,7 +498,9 @@ except KeyboardInterrupt:
 
     traci.close()
 finally:
-    print("Hey What")
+    print(len(data))
+    print(len(data[0]))
+    print(len(data[0][0]))
     call_save_data(data, vehIDList, path, period)
     
     # Destroy all actors
