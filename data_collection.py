@@ -224,22 +224,23 @@ Params:
     list data : The array to save
     list veh_ids : Array of vehicle ids
     str path : The filepath to
+    int period : the period of data collection
 Return:
     bool : True if successfully saved data, False otherwise
 """
-def save_data(data, veh_ids, path, step_length):
+def save_data(data, veh_ids, path, period):
     if len(data) == 0:
         return False
     
     np_data = np.array(data)
     
-    time = np.array([x * step_length for x in range(len(data))])
+    time = np.array([x * period for x in range(len(data))])
     data_labels = ["Speed", "Max Speed", "Acceleration",
                    "Traffic Light Distance", "Traffic Light State", "Traffic Light Time to Switch", "Number of Vehicles to Traffic Light",
                    "Number of Leading Vehicles", "Leading Vehicles Average Gap", "Leading Vehicles Average Speed", "Leading Vehicles Average Acceleration",
                    "Number of Right Lane Vehicles", "Right Lane Average Gap", "Right Lane Average Speed", "Right Lane Average Acceleration",
                    "Number of Left Lane Vehicles", "Left Lane Average Gap", "Left Lane Average Speed", "Left Lane Average Acceleration",
-                   "Destination Edge", "Distance to Edge", "Destination Reached"]
+                   "Destination Edge", "Distance to Edge"]
     veh_ids = np.array(veh_ids)
 
     xr_data = xr.DataArray(
@@ -256,7 +257,114 @@ def save_data(data, veh_ids, path, step_length):
     xr_ds.to_netcdf(path)
 
     return True
+
+"""
+Collects data for the given vehicle
+Params:
+    int vehID: the ID of the vehicle to get data from
+    Obj v: the subscription from the vehicle
+Ret:
+    List[] data_v: collected vehicle data. See the return statement to get all values
+"""
+def collect_data(vehID, v):
+    # Traffic light Data
+    # Default Values
+    tl_id, tl_dist, tl_state, tl_timeChange, tl_numBlock = -1, -1, 'n', -1, 0
+    if len(v[tc.VAR_NEXT_TLS]) > 0:
+        tl = v[tc.VAR_NEXT_TLS][0] # Only 1 traffic light per intersection at Gomentum
+        tl_id = tl[0] # Id of next TL
+        tl_dist = tl[2] # Distance in meters
+        tl_state = tl[3] # string 'r', 'g', or 'y' (for more, see documentation)
+        tl_timeChange = traci.trafficlight.getNextSwitch(tl_id) - t
+        tl_numBlock = numberVehtoTL(vehID, tl_dist)
+
+    # Vehicle Data
+    veh_speed = v[tc.VAR_SPEED] # in m/s
+    veh_max_speed = v[tc.VAR_ALLOWED_SPEED] # Need to take into consideration
+    veh_accel = v[tc.VAR_ACCELERATION] # How fast vehicle is accelerating
+
+    # Getting neighbor information 
+    # Distance range set to the speed of the vehicle (i.e. 25 m if vehicle moving at 25 m/s)
+    # But minimum is 5 meters
+    dist = max(veh_speed, 10)
+    leading_info = findLeadingNeighbors(vehID, dist)
+    leading_number = len(leading_info[0])
+    leading_avg_gap = -1 
+    leading_avg_speed = -1
+    leading_avg_accel = -1
+    if len(leading_info[0]) != 0:
+        leading_avg_gap = computeAverage(leading_info[1])
+        leading_velAccel = avgSpeedAccel(leading_info[0])
+        leading_avg_speed = leading_velAccel[0]
+        leading_avg_accel = leading_velAccel[1]
+
+    right_lane_info = rightLaneInfo(vehID, dist)
+    right_lane_number = len(right_lane_info[0])
+    right_lane_avg_gap = -1
+    right_lane_avg_speed = -1
+    right_lane_avg_accel = -1
+    if len(right_lane_info[0]) != 0:
+        right_lane_avg_gap = computeAverage(right_lane_info[1])
+        right_lane_velAccel = avgSpeedAccel(right_lane_info[0])
+        right_lane_avg_speed = right_lane_velAccel[0]
+        right_lane_avg_accel = right_lane_velAccel[1]
+
+    left_lane_info = leftLaneInfo(vehID, dist)
+    left_lane_number = len(left_lane_info[0])
+    left_lane_avg_gap = -1
+    left_lane_avg_speed = -1
+    left_lane_avg_accel = -1
+    if len(left_lane_info[0]) != 0:
+        left_lane_avg_gap = computeAverage(left_lane_info[1])
+        left_lane_velAccel = avgSpeedAccel(left_lane_info[0])
+        left_lane_avg_speed = left_lane_velAccel[0]
+        left_lane_avg_accel = left_lane_velAccel[1]
     
+    # Getting route information
+    curr_route = v[tc.VAR_EDGES]
+    route_index = v[tc.VAR_ROUTE_INDEX]
+    
+    # Data Variables
+    dest = curr_route[-1]
+
+    if route_index == len(curr_route) - 1:
+        dest = random.choice(edges)
+        traci.vehicle.changeTarget(vehID, dest)
+    
+    route_length = traci.vehicle.getDrivingDistance(vehID, dest, 0)
+    
+
+    # Returning Data for this vehicle
+    data_v = [
+        veh_speed, veh_max_speed, veh_accel,
+        tl_dist, tl_state, tl_timeChange, tl_numBlock,
+        leading_number, leading_avg_gap, leading_avg_speed, leading_avg_accel,
+        right_lane_number, right_lane_avg_gap, right_lane_avg_speed, right_lane_avg_accel,
+        left_lane_number, left_lane_avg_gap, left_lane_avg_speed, left_lane_avg_accel,
+        dest, route_length
+    ]
+    return data_v
+
+"""
+Calls save_data and outputs messsages
+Params:
+    data : The array to save
+    list veh_ids : Array of vehicle ids
+    str path : The filepath to
+    int period : the period of data collection
+Ret:
+    Nothing
+""" 
+def call_save_data(data, vehIDList, path, period):
+    print("Saving Data")
+    success = save_data(data, vehIDList, path, period)
+    if success:
+        print("Successfully saved data")
+    else:
+        print("Encountered an issue with saving data")
+
+    print("Closing Simulation and cleaning up actors")
+
 # =========================== End Helper Functions ===========================
 
 # Arg parser
@@ -323,8 +431,6 @@ vehIDList = traci.vehicle.getIDList()
 tmp_edges = traci.edge.getIDList()
 # Filtering out internal edges
 edges = [e for e in tmp_edges if ":" not in e]
-# Target edges for each vehicle
-target_edges = {}
 
 # Array holding all data
 data = []
@@ -342,10 +448,6 @@ try:
         # Updating subscriptions to vehicles
         new_List = traci.vehicle.getIDList()
 
-        # Start collecting data once number of vehicles reached max
-        if len(new_List) == num_vehs:
-            data_t = []
-            sim_time += 0.5
         
         for vehID in new_List:
             if vehID not in vehIDList:
@@ -354,131 +456,38 @@ try:
                     tc.VAR_POSITION3D, tc.VAR_SPEED, tc.VAR_ALLOWED_SPEED, tc.VAR_ACCELERATION,
                     tc.VAR_ROAD_ID, tc.VAR_LANEPOSITION, tc.VAR_EDGES, tc.VAR_ROUTE_INDEX
                 ])
-        
+            
             v = traci.vehicle.getSubscriptionResults(vehID)
-
-            # # Only collect data every "period" time steps
-            # if  len(new_List) == num_vehs:
-            #     traci.simulationStep() # Tick the simulation
-            #     t += 0.5 # Assuming that this operation takes negligible time
-            #     continue
-            
-            # Traffic light Data
-            # Default Values
-            tl_id, tl_dist, tl_state, tl_timeChange, tl_numBlock = -1, -1, 'n', -1, 0
-            if len(v[tc.VAR_NEXT_TLS]) > 0:
-                tl = v[tc.VAR_NEXT_TLS][0] # Only 1 traffic light per intersection at Gomentum
-                tl_id = tl[0] # Id of next TL
-                tl_dist = tl[2] # Distance in meters
-                tl_state = tl[3] # string 'r', 'g', or 'y' (for more, see documentation)
-                tl_timeChange = traci.trafficlight.getNextSwitch(tl_id) - t
-                tl_numBlock = numberVehtoTL(vehID, tl_dist)
-
-            # Vehicle Data
-            veh_speed = v[tc.VAR_SPEED] # in m/s
-            veh_max_speed = v[tc.VAR_ALLOWED_SPEED] # Need to take into consideration
-            veh_accel = v[tc.VAR_ACCELERATION] # How fast vehicle is accelerating
-
-            # Getting neighbor information 
-            # Distance range set to the speed of the vehicle (i.e. 25 m if vehicle moving at 25 m/s)
-            # But minimum is 5 meters
-            dist = max(veh_speed, 10)
-            leading_info = findLeadingNeighbors(vehID, dist)
-            leading_number = len(leading_info[0])
-            leading_avg_gap = -1 
-            leading_avg_speed = -1
-            leading_avg_accel = -1
-            if len(leading_info[0]) != 0:
-                leading_avg_gap = computeAverage(leading_info[1])
-                leading_velAccel = avgSpeedAccel(leading_info[0])
-                leading_avg_speed = leading_velAccel[0]
-                leading_avg_accel = leading_velAccel[1]
-
-            right_lane_info = rightLaneInfo(vehID, dist)
-            right_lane_number = len(right_lane_info[0])
-            right_lane_avg_gap = -1
-            right_lane_avg_speed = -1
-            right_lane_avg_accel = -1
-            if len(right_lane_info[0]) != 0:
-                right_lane_avg_gap = computeAverage(right_lane_info[1])
-                right_lane_velAccel = avgSpeedAccel(right_lane_info[0])
-                right_lane_avg_speed = right_lane_velAccel[0]
-                right_lane_avg_accel = right_lane_velAccel[1]
-
-            left_lane_info = leftLaneInfo(vehID, dist)
-            left_lane_number = len(left_lane_info[0])
-            left_lane_avg_gap = -1
-            left_lane_avg_speed = -1
-            left_lane_avg_accel = -1
-            if len(left_lane_info[0]) != 0:
-                left_lane_avg_gap = computeAverage(left_lane_info[1])
-                left_lane_velAccel = avgSpeedAccel(left_lane_info[0])
-                left_lane_avg_speed = left_lane_velAccel[0]
-                left_lane_avg_accel = left_lane_velAccel[1]
-            
             # Getting route information
             curr_route = v[tc.VAR_EDGES]
-            curr_edge = v[tc.VAR_ROAD_ID]
-            curr_pos = v[tc.VAR_LANEPOSITION]
             route_index = v[tc.VAR_ROUTE_INDEX]
-            
-            # Data Variables
-            reached = 'n'
-            dest = curr_route[-1]
-
+            # Assign new route if needed
             if route_index == len(curr_route) - 1:
-                reached = 'y'
                 dest = random.choice(edges)
                 traci.vehicle.changeTarget(vehID, dest)
-                target_edges[vehID] = dest
-            
-            route_length = traci.vehicle.getDrivingDistance(vehID, dest, 0)
-            
 
-            # Loading in data for this vehicle
-            if len(new_List) == num_vehs and sim_time % period == 0:
-                data_v = [
-                    veh_speed, veh_max_speed, veh_accel,
-                    tl_dist, tl_state, tl_timeChange, tl_numBlock,
-                    leading_number, leading_avg_gap, leading_avg_speed, leading_avg_accel,
-                    right_lane_number, right_lane_avg_gap, right_lane_avg_speed, right_lane_avg_accel,
-                    left_lane_number, left_lane_avg_gap, left_lane_avg_speed, left_lane_avg_accel,
-                    dest, route_length, reached
-                ]
-                data_t.append(data_v)
-
+            # Collect data if at max vehicle count. Also collect at every "period " time steps
+            if len(new_List) == num_vehs:
+                sim_time += 0.5
+                if sim_time % period == 0:
+                    data.append([collect_data(vehID, v)])
 
         # Updating list
         vehIDList = new_List
-
-        # Appending Data to main data
-        if len(new_List) == num_vehs:
-            data.append(data_t)
         
         traci.simulationStep() # Tick the simulation
         t += 0.5 # Assuming that this operation takes negligible time
 
 except traci.exceptions.FatalTraCIError as e:
-    print("Saving Data")
-    success = save_data(data, vehIDList, path, period)
-    if success:
-        print("Successfully saved data")
-    else:
-        print("Encountered an issue with saving data")
+    print("ERROR: {}".format(e))
+    call_save_data(data, vehIDList, path, period)
 
     if e == "connection closed by SUMO":
         print("Closing Connection")
     else:
         print("Fatal TraCI Error: {}".format(e))
 except KeyboardInterrupt:
-    print("Saving Data")
-    success = save_data(data, vehIDList, path, period)
-    if success:
-        print("Successfully saved data")
-    else:
-        print("Encountered an issue with saving data")
-
-    print("Closing Simulation and cleaning up actors")
+    call_save_data(data, vehIDList, path, period)
     
     # Destroy all actors
     for vehID in vehIDList:
@@ -486,14 +495,8 @@ except KeyboardInterrupt:
 
     traci.close()
 finally:
-    print("Saving Data")
-    success = save_data(data, vehIDList, path, period)
-    if success:
-        print("Successfully saved data")
-    else:
-        print("Encountered an issue with saving data")
-
-    print("Closing Simulation and cleaning up actors")
+    print("Hey What")
+    call_save_data(data, vehIDList, path, period)
     
     # Destroy all actors
     for vehID in vehIDList:
