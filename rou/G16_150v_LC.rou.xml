@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<routes>
+    <flow id="f_0" type="DEFAULT_VEHTYPE" from="16" to="16" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+    <flow id="f_1" type="DEFAULT_VEHTYPE" from="-11" to="-11" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+    <flow id="f_2" type="DEFAULT_VEHTYPE" from="-0" to="-0" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+    <flow id="f_3" type="DEFAULT_VEHTYPE" from="3" to="3" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+    <flow id="f_4" type="DEFAULT_VEHTYPE" from="6" to="6" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+    <flow id="f_5" type="DEFAULT_VEHTYPE" from="-24" to="-24" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+    <flow id="f_6" type="DEFAULT_VEHTYPE" from="13" to="13" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+    <flow id="f_7" type="DEFAULT_VEHTYPE" from="15" to="15" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+    <flow id="f_8" type="DEFAULT_VEHTYPE" from="12" to="12" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+    <flow id="f_9" type="DEFAULT_VEHTYPE" from="4" to="4" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+    <flow id="f_10" type="DEFAULT_VEHTYPE" from="22" to="22" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+    <flow id="f_11" type="DEFAULT_VEHTYPE" from="25" to="25" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+    <flow id="f_12" type="DEFAULT_VEHTYPE" from="5" to="5" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+    <flow id="f_13" type="DEFAULT_VEHTYPE" from="21" to="21" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+    <flow id="f_14" type="DEFAULT_VEHTYPE" from="14" to="14" vehsPerHour="1000.00" departLane="random" begin="0.0" number="10"/>
+</routes>

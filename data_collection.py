@@ -326,10 +326,6 @@ def collect_data(vehID, v):
     
     # Data Variables
     dest = curr_route[-1]
-
-    if route_index == len(curr_route) - 1:
-        dest = random.choice(edges)
-        traci.vehicle.changeTarget(vehID, dest)
     
     route_length = traci.vehicle.getDrivingDistance(vehID, dest, 0)
     
@@ -418,7 +414,8 @@ path = args.output_file
 sumoBinary = "sumo-gui"
 sumoCmd = [sumoBinary, 
     "-c", args.sumo_cfg_file,
-    "--step-length", "0.5"
+    "--step-length", "0.5",
+    "--time-to-teleport", "120"
 ]
 
 # Sending command
@@ -441,11 +438,36 @@ t = 0
 # Keeps track of simulation time
 sim_time = 0
 
+# Just for Town03
+is_town03 = "Town03" in path
+valid_town03_edges = ["-0", "0", "-1", "1", "-2", "2","-3", "3", "-4", "4", "-77", "77", "-78", "78", 
+                    "-76", "76", "-75", "75", "-74", "74", "-87", "87", "-18", "-19", "19", 
+                    "-20", "20", "-21", "21", "-22", "22", "-52", "-23", "23", "-25", "25", "-90", "90", 
+                    "-57", "57", "-92", "-56", "56", "-5", "6", "-7", "7", "-8", "8", "-67", 
+                    "-68", "68", "-65", "-87", "87", "-88", "88", "-89", "89", "-49", "49", "-50", "50", 
+                    "-51", "51", "-31", "31", "-32", "32", "-34", "34"]
+
 try:
     while sim_time <= run_time:
         # Updating subscriptions to vehicles
         new_List = traci.vehicle.getIDList()
-        
+
+        # Getting arrived vehicles
+        arrived_list = traci.simulation.getArrivedIDList()
+
+        # Reintroduce any departed vehicles
+        for vehID in arrived_list:
+            # Add a vehicle
+            traci.vehicle.add(vehID, "")
+
+            # Pick an edge
+            old_dest = traci.vehicle.getRoute(vehID)[-1]
+            new_dest = random.choice(edges)
+            while new_dest == old_dest or ("-" + new_dest == old_dest or new_dest == "-" + old_dest) \
+                or (is_town03 and not (new_dest in valid_town03_edges)):
+                new_dest = random.choice(edges)
+            
+
         # For holding all vehicle data at this time step if data is being collected
         data_t = []
         
@@ -454,27 +476,36 @@ try:
                 traci.vehicle.subscribe(vehID, [
                     tc.VAR_NEXT_TLS,
                     tc.VAR_POSITION3D, tc.VAR_SPEED, tc.VAR_ALLOWED_SPEED, tc.VAR_ACCELERATION,
-                    tc.VAR_ROAD_ID, tc.VAR_LANEPOSITION, tc.VAR_EDGES, tc.VAR_ROUTE_INDEX
+                    tc.VAR_ROAD_ID, tc.VAR_LANEPOSITION, tc.VAR_EDGES, tc.VAR_ROUTE_INDEX,
+                    tc.VAR_WAITING_TIME
                 ])
             
             v = traci.vehicle.getSubscriptionResults(vehID)
             # Getting route information
             curr_route = v[tc.VAR_EDGES]
             route_index = v[tc.VAR_ROUTE_INDEX]
-            # Assign new route if needed
+            # Assign new route if arrived at destination
             if route_index == len(curr_route) - 1:
-                dest = random.choice(edges)
-                traci.vehicle.changeTarget(vehID, dest)
+                old_dest = curr_route[route_index]
+                new_dest = random.choice(edges)
+                while new_dest == old_dest or ("-" + new_dest == old_dest or new_dest == "-" + old_dest) \
+                    or (is_town03 and not (new_dest in valid_town03_edges)):
+                    new_dest = random.choice(edges)
+                
+                # Reset route
+                traci.vehicle.setRoute(vehID, [old_dest])
+                traci.vehicle.changeTarget(vehID, new_dest)
 
             # Collect data if at max vehicle count. Also collect at every "period " time steps
             if len(new_List) == num_vehs:
                 if sim_time % period == 0:
-                    data_t.append(collect_data(vehID, v))
+                   data_t.append(collect_data(vehID, v))
 
         # Updating list
         vehIDList = new_List
 
         if len(new_List) == num_vehs:
+            print(sim_time)
             sim_time += 0.5
             if len(data_t) != 0:
                 data.append(data_t)
@@ -498,9 +529,6 @@ except KeyboardInterrupt:
 
     traci.close()
 finally:
-    print(len(data))
-    print(len(data[0]))
-    print(len(data[0][0]))
     call_save_data(data, vehIDList, path, period)
     
     # Destroy all actors

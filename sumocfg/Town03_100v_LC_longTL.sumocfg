@@ -7,7 +7,6 @@
 
     <input>
         <net-file value="../net/Town03.net.xml"/>
-        <additional-files value="../add/Town03_equal_reroute.add.xml"/>
         <route-files value="../rou/Town03_100v_LC.rou.xml"/>
     </input>
 
